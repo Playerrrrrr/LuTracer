@@ -1,0 +1,11 @@
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\WalnutApp.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\WalnutApp.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\image_writer.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\image_writer.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\integrator.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\integrator.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\material.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\material.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\math_cul.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\math_cul.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\microfacet_model.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\microfacet_model.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\model.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\model.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\object.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\object.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\renderer.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\renderer.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\scene.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\scene.obj
+C:\Users\DELL\source\repos\CudaRuntime2\WalnutApp\src\sky_box.cpp;C:\Users\DELL\source\repos\CudaRuntime2\bin-int\Debug-windows-x86_64\WalnutApp\sky_box.obj
