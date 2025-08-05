@@ -45,8 +45,6 @@ public:
 		ImGui::PopStyleVar();
 
 		ImGui::Begin("Scene");
-		if (is_use_pixel_importance_sampling)
-			ray_allocator_displayor::show_ui(m_ray_allocator);
 
 		ImGui::PushID(std::hash<std::string>{}(std::string("GLOBAL INFORMATION")));
 		if (ImGui::ColorEdit3("sky light", &sky_color.x)) {
@@ -111,17 +109,14 @@ public:
 
 		if (m_camera->this_frame_is_change()) {
 			check_cf(cudaMemcpy(m_scene.camera_ray, m_camera->get_rays(), pixel_size * sizeof LuTracer::ray, cudaMemcpyHostToDevice));
-			check_cf(cudaMemcpy(m_scene.pixel_pos, m_default_pixel_pos, pixel_size * sizeof(glm::uvec2), cudaMemcpyHostToDevice));
 		}
 
 		if (m_camera->this_frame_is_change() || ui_change) {
 			m_fram_cnt = 1;//记录渲染帧数《此时渲染帧数和pixel帧数区分开来》
 			std::cout << "change" << std::endl;
-			check_cf(cudaMemset(m_scene.pre_pixel_sampling_cnt, 0, pixel_size * sizeof(unsigned int)));
-			if (ui_change) ui_change = false;
+			if (ui_change) 
+				ui_change = false;
 			check_cf(cudaMemset(m_scene.m_pixel_radiance, 0, m_scene.image_hight * m_scene.image_width * sizeof glm::vec3));
-			check_cf(cudaMemset(m_scene.radiance_variance_sum, 0, pixel_size * sizeof(float)));
-			check_cf(cudaMemset(m_scene.time_elapsed_sum, 0, pixel_size * sizeof(float)));
 		}
 
 		Walnut::Timer timer;
@@ -129,27 +124,6 @@ public:
 
 		cuda_render(m_scene);//渲染，同步
 
-		if (is_use_pixel_importance_sampling) {//这个残影bug怎么回事？？
-			if (m_fram_cnt % 200 == 0) {
-				std::cout << "alloca" << std::endl;
-				//拷贝time elapsed 数据
-				check_cf(cudaMemcpy(m_ray_allocator.time_elapsed.get(), m_scene.time_elapsed, pixel_size * sizeof(float), cudaMemcpyDeviceToHost));
-				//拷贝radiance variance 数据
-				check_cf(cudaMemcpy(m_ray_allocator.radiance_variance.get(), m_scene.radiance_variance, pixel_size * sizeof(float), cudaMemcpyDeviceToHost));
-				//拷贝每个像素的采样次数
-				check_cf(cudaMemcpy(ray_allocator_displayor::cuda_sampling_data.get(), m_scene.pre_pixel_sampling_cnt, pixel_size * sizeof(unsigned int), cudaMemcpyDeviceToHost));
-
-				m_ray_allocator.allocate();
-				check_cf(cudaMemcpy(m_scene.camera_ray, m_ray_allocator.m_result_ray.get(), pixel_size * sizeof(ray), cudaMemcpyHostToDevice));
-				check_cf(cudaMemcpy(m_scene.pixel_pos, m_ray_allocator.m_result_pixel_pos.get(), pixel_size * sizeof(glm::uvec2), cudaMemcpyHostToDevice));
-
-				cudaDeviceSynchronize();
-			}
-		}
-		else {//这边可以优化一下
-			check_cf(cudaMemcpy(m_scene.camera_ray, m_camera->m_rays.get(), pixel_size * sizeof(ray), cudaMemcpyHostToDevice));
-			check_cf(cudaMemcpy(m_scene.pixel_pos, m_default_pixel_pos, pixel_size * sizeof(glm::uvec2), cudaMemcpyHostToDevice));
-		}
 
 		if (is_use_filter) {
 			joint_bilateral_filtering(m_scene.m_filter);
@@ -183,18 +157,12 @@ public:
 		int pixel_bit = sizeof uint32_t;
 
 		//m_ray_allocator与camera 指向同一块内存
-
-		m_ray_allocator.init(m_viewport_width, m_viewport_height, m_camera.get()->m_rays);
-		ray_allocator_displayor::init(m_viewport_height, m_viewport_width);
-		m_default_pixel_pos = new glm::uvec2[pixel_size];
-		for (int h = 0; h < mh; h++) {
-			for (int w = 0; w < mw; w++) {
-				m_default_pixel_pos[h * mw + w] = glm::uvec2{ w,h };
-			}
+		m_rand_map.resize(core_para::RAND_MAP_SIZE());
+		for (int i = 0; i < m_rand_map.size(); i++) {
+			m_rand_map[i] = Walnut::Random::Float();
 		}
 
 		//cuda全局
-
 		//scene
 		m_config.buffer_width = mw;
 		m_config.buffer_height = mh;
@@ -207,16 +175,11 @@ public:
 
 		check_cf(cudaSetDevice(0));
 		check_cf(cudaMalloc((void**)&(m_scene.m_pixel), pixel_size * pixel_bit));
-		check_cf(cudaMalloc((void**)&(m_scene.frame_cnt), sizeof(float)));
+		check_cf(cudaMalloc((void**)&(m_scene.frame_cnt), sizeof(unsigned int)));
 		check_cf(cudaMalloc((void**)&(m_scene.camera_ray), pixel_size * sizeof LuTracer::ray));
 		check_cf(cudaMalloc((void**)&(m_scene.m_pixel_radiance), pixel_size * sizeof glm::vec3));
-		check_cf(cudaMalloc((void**)&(m_scene.radiance_variance), pixel_size * sizeof(float)));
-		check_cf(cudaMalloc((void**)&(m_scene.radiance_variance_sum), pixel_size * sizeof(float)));
-		check_cf(cudaMalloc((void**)&(m_scene.time_elapsed), pixel_size * sizeof(float)));
-		check_cf(cudaMalloc((void**)&(m_scene.time_elapsed_sum), pixel_size * sizeof(float)));
-		check_cf(cudaMalloc((void**)&(m_scene.pixel_pos), pixel_size * sizeof glm::uvec2));
 		check_cf(cudaMalloc((void**)&(m_scene.sky_color), sizeof glm::vec3));
-		check_cf(cudaMalloc((void**)&(m_scene.pre_pixel_sampling_cnt), pixel_size * sizeof(unsigned int)));
+		check_cf(cudaMalloc((void**)&(m_scene.rand_map), core_para::RAND_MAP_SIZE() * sizeof(float)));
 
 		m_scene.image_hight = mh;
 		m_scene.image_width = mw;
@@ -224,12 +187,11 @@ public:
 		check_cf(cudaMemcpy(m_scene.m_pixel, m_image_data, pixel_size * pixel_bit, cudaMemcpyHostToDevice));
 		m_scene.m_filter.color_buffer = m_scene.m_pixel;
 		check_cf(cudaMemcpy(m_scene.camera_ray, m_camera->get_rays(), pixel_size * sizeof LuTracer::ray, cudaMemcpyHostToDevice));
-		check_cf(cudaMemcpy(m_scene.pixel_pos, m_default_pixel_pos, pixel_size * sizeof glm::uvec2, cudaMemcpyHostToDevice));
 		check_cf(cudaMemcpy(m_scene.sky_color, &sky_color, sizeof glm::vec3, cudaMemcpyHostToDevice));
-		check_cf(cudaMemcpy(m_scene.frame_cnt, &m_fram_cnt, sizeof (float), cudaMemcpyHostToDevice));
+		check_cf(cudaMemcpy(m_scene.frame_cnt, &m_fram_cnt, sizeof(unsigned int), cudaMemcpyHostToDevice));
+		check_cf(cudaMemcpy(m_scene.rand_map, &m_rand_map[0], sizeof(float) * core_para::RAND_MAP_SIZE(), cudaMemcpyHostToDevice));
 
 		check_cf(cudaMemset(m_scene.m_pixel_radiance, 0, pixel_size * sizeof glm::vec3));
-		check_cf(cudaMemset(m_scene.pre_pixel_sampling_cnt, 0, pixel_size * sizeof(unsigned int)));
 		//model
 
 		//精细度不高时就会出现0个三角形的BVH非叶子节点
@@ -411,10 +373,9 @@ private:
 	float overhead = 0;
 	float camera_speed = 1.0f;
 	glm::vec3 view_point{ 0,0,1 };
-	glm::uvec2* m_default_pixel_pos;
+	std::vector<float> m_rand_map;
 
 	joint_config m_config;
-	ray_allocator m_ray_allocator;
 	bool is_use_filter = false;
 	bool is_use_pixel_importance_sampling = false;
 

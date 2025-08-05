@@ -9,10 +9,9 @@ namespace LuTracer {
 	public:
 		__device__ ray static importance_sampling(const cuda_hit_payload& para) {
 			//随机数生成这里有需要改进一下？
-			glm::vec2 rand_num = utility_function::sobolVec2(
-				pixel_sample_cnt[utility_function::get_thread_idx()] + 1 + utility_function::wang_hash(utility_function::get_thread_idx()),
-				thread_bounce_num[utility_function::get_thread_idx()]
-			);
+			glm::vec2 rand_num{ rand_map[((rand_map_idx++) + utility_function::wang_hash(utility_function::get_global_idx())) % core_para::RAND_MAP_SIZE()],
+								rand_map[(rand_map_idx +utility_function::wang_hash(utility_function::get_global_idx() + 132)) % core_para::RAND_MAP_SIZE()]};
+
 			float u = math_const_value::PI() * 2.0f * rand_num.x;
 			glm::vec3 dir;
 			/*
@@ -57,11 +56,8 @@ namespace LuTracer {
 			return L;
 		}
 		__device__ ray static importance_sampling(const cuda_hit_payload& para) {
-
-			glm::vec2 rand_num = utility_function::sobolVec2(
-				pixel_sample_cnt[utility_function::get_thread_idx()] + 1 + utility_function::rand(),
-				thread_bounce_num[utility_function::get_thread_idx()]
-			);
+			glm::vec2 rand_num{ rand_map[((rand_map_idx++) + utility_function::wang_hash(utility_function::get_global_idx())) % core_para::RAND_MAP_SIZE()],
+								rand_map[(rand_map_idx + utility_function::wang_hash(utility_function::get_global_idx() + 132)) % core_para::RAND_MAP_SIZE()] };
 
 			material* t_para = para.material;
 			//随机数生成这里有需要改进一下？
@@ -160,7 +156,7 @@ namespace LuTracer {
 			float pdf = p_diffuse * pdf_diffuse
 				+ p_specular * pdf_specular;
 
-			pdf = glm::max(1e-2f, pdf);
+			pdf = glm::max(1e-10f, pdf);
 			return pdf;
 		}
 	};

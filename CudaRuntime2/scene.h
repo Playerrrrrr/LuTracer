@@ -17,7 +17,6 @@ namespace LuTracer {
 		size_t image_width, image_hight;
 
 		ray* camera_ray;
-		glm::uvec2* pixel_pos;
 		uint32_t* m_pixel;
 		glm::vec3* m_pixel_radiance;
 
@@ -30,18 +29,13 @@ namespace LuTracer {
 		glm::vec3* position_image;
 		glm::vec3* normal_image;
 
-		float* time_elapsed_sum;
-		float* radiance_variance_sum;
-
-		float* time_elapsed;
-		float* radiance_variance;
-
+		float* rand_map;
+		unsigned int rand_map_idx;
 
 		joint_bilateral_filter m_filter;
 		int clock_rate_kHz;
 		//设备数据
 
-		unsigned int* pre_pixel_sampling_cnt;
 		unsigned int* frame_cnt;
 
 		__device__ launch_result launch_ray(const ray& camera_ray) {
@@ -91,9 +85,6 @@ namespace LuTracer {
 				float pdf = m_sampler.pdf(hit_res);//pdf
 				glm::vec3 BRDF = hit_res.material->calculate_BRDF(next_ray.get_dir(), -t_ray.get_dir(), hit_res.normal);//pdf
 				float cosine_L_with_normal = glm::max(0.f, glm::dot(next_ray.get_dir(), hit_res.normal));//出射光和法线夹角余弦
-					
-
-
 
 				hit_res = BVH_test(next_ray);//bvh测试
 

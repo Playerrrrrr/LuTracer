@@ -15,4 +15,8 @@ namespace LuTracer{
 	extern __shared__ unsigned int pixel_sample_cnt[
 		core_para::BLOCK_DIM_X() * core_para::BLOCK_DIM_Y() * core_para::BLOCK_DIM_Z()
 	];
+
+	extern __device__ float* rand_map;//全局可访问的scene
+	extern __device__ unsigned int rand_map_idx;//全局可访问的scene
+	
 }
